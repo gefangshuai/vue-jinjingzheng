@@ -11,6 +11,7 @@ Vue.config.productionTip = false
 Vue.use(iView);
 
 const instance = Axios.create({
+    // baseURL: 'https://bjjj.zhongchebaolian.com',
     withCredentials:true
 });
 

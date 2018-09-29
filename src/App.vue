@@ -1,6 +1,6 @@
 <template>
     <div id="app">
-        <HelloWorld msg="进京证服务定时检测"/>
+        <HelloWorld msg="服务检测"/>
     </div>
 </template>
 

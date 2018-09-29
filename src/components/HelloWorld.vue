@@ -74,6 +74,7 @@
                 return moment(time)
             },
             check() {
+
                 this.$http.get('/app_web/jsp/homepage.jsp', {
                     timeout: this.timeout
                 }).then(res => {
@@ -82,7 +83,8 @@
                         msg: '<span class="text-success">服务已上线！！！</span>',
                         time: new Date()
                     });
-                    new Notification("服务已上线！")
+                    new Notification("服务已上线！");
+                    setTimeout(this.check, 30000)
                 }).catch(error => {
                     if (error.code === 'ECONNABORTED') {
                         this.messages.push({
@@ -90,7 +92,6 @@
                             msg: '<span class="text-danger">服务超时...</span>',
                             time: new Date()
                         });
-                        this.check();
                     } else {
                         this.messages.push({
                             code: 0,
@@ -98,6 +99,7 @@
                             time: new Date()
                         })
                     }
+                    setTimeout(this.check, this.timeout)
                     this.$nextTick(() => {
                         let height = this.$refs['list'].scrollHeight;
                         this.$refs['content'].scrollTop = height + 100
