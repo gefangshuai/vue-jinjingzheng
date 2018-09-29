@@ -1,58 +1,150 @@
 <template>
-  <div class="hello">
-    <h1>{{ msg }}</h1>
-    <p>
-      For guide and recipes on how to configure / customize this project,<br>
-      check out the
-      <a href="https://cli.vuejs.org" target="_blank" rel="noopener">vue-cli documentation</a>.
-    </p>
-    <h3>Installed CLI Plugins</h3>
-    <ul>
-      <li><a href="https://github.com/vuejs/vue-cli/tree/dev/packages/%40vue/cli-plugin-babel" target="_blank" rel="noopener">babel</a></li>
-      <li><a href="https://github.com/vuejs/vue-cli/tree/dev/packages/%40vue/cli-plugin-eslint" target="_blank" rel="noopener">eslint</a></li>
-    </ul>
-    <h3>Essential Links</h3>
-    <ul>
-      <li><a href="https://vuejs.org" target="_blank" rel="noopener">Core Docs</a></li>
-      <li><a href="https://forum.vuejs.org" target="_blank" rel="noopener">Forum</a></li>
-      <li><a href="https://chat.vuejs.org" target="_blank" rel="noopener">Community Chat</a></li>
-      <li><a href="https://twitter.com/vuejs" target="_blank" rel="noopener">Twitter</a></li>
-      <li><a href="https://news.vuejs.org" target="_blank" rel="noopener">News</a></li>
-    </ul>
-    <h3>Ecosystem</h3>
-    <ul>
-      <li><a href="https://router.vuejs.org" target="_blank" rel="noopener">vue-router</a></li>
-      <li><a href="https://vuex.vuejs.org" target="_blank" rel="noopener">vuex</a></li>
-      <li><a href="https://github.com/vuejs/vue-devtools#vue-devtools" target="_blank" rel="noopener">vue-devtools</a></li>
-      <li><a href="https://vue-loader.vuejs.org" target="_blank" rel="noopener">vue-loader</a></li>
-      <li><a href="https://github.com/vuejs/awesome-vue" target="_blank" rel="noopener">awesome-vue</a></li>
-    </ul>
-  </div>
+    <div class="hello">
+        <h1 style="margin-bottom: 20px;">{{ msg }}</h1>
+        <div class="wrapper">
+            <div class="settings">
+                <p>
+                    请求超时时间：
+                </p>
+                <p>
+                    <Input v-model="time">
+                        <span slot="append">毫秒</span>
+                    </Input>
+                </p>
+                <p>
+                    <Button type="primary" @click="timeout=time">确定</Button>
+                </p>
+                <p>
+                    <b>
+                        成功列表：
+                    </b>
+                </p>
+                <p v-for="m in successed">
+                    <span style="margin-right: 10px">
+                            {{moment(m.time).format('HH:mm:ss')}}
+                        </span>
+                    <span v-html="m.msg"></span>
+                </p>
+            </div>
+            <div class="content" ref="content">
+                <div ref="list">
+                    <div v-for="(m, index) in messages">
+                        <b>第{{index + 1}}次尝试：</b>
+                        <span style="margin-right: 10px">
+                            {{moment(m.time).format('HH:mm:ss')}}
+                        </span>
+                        <span v-html="m.msg"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </template>
 
 <script>
-export default {
-  name: 'HelloWorld',
-  props: {
-    msg: String
-  }
-}
+    import moment from 'moment';
+    export default {
+        name: 'HelloWorld',
+        data() {
+            return {
+                messages: [],
+                time: 3000,
+                timeout: 3000
+            }
+        },
+        props: {
+            msg: String
+        },
+        computed: {
+            successed(){
+                return this.$_.filter(this.messages, {code: 1})
+            }
+        },
+        mounted() {
+            this.check();
+            Notification.requestPermission(function (status) {
+                // 这将使我们能在 Chrome/Safari 中使用 Notification.permission
+                if (Notification.permission !== status) {
+                    Notification.permission = status;
+                }
+            });
+        },
+        methods: {
+            moment(time){
+                return moment(time)
+            },
+            check() {
+                this.$http.get('/app_web/jsp/homepage.jsp', {
+                    timeout: this.timeout
+                }).then(res => {
+                    this.messages.push({
+                        code: 1,
+                        msg: '<span class="text-success">服务已上线！！！</span>',
+                        time: new Date()
+                    });
+                    new Notification("服务已上线！")
+                }).catch(error => {
+                    if (error.code === 'ECONNABORTED') {
+                        this.messages.push({
+                            code: 0,
+                            msg: '<span class="text-danger">服务超时...</span>',
+                            time: new Date()
+                        });
+                        this.check();
+                    } else {
+                        this.messages.push({
+                            code: 0,
+                            msg: '<span class="text-danger">' + error + '</span>',
+                            time: new Date()
+                        })
+                    }
+                    this.$nextTick(() => {
+                        let height = this.$refs['list'].scrollHeight;
+                        this.$refs['content'].scrollTop = height + 100
+                    })
+                })
+            }
+        }
+    }
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-h3 {
-  margin: 40px 0 0;
-}
-ul {
-  list-style-type: none;
-  padding: 0;
-}
-li {
-  display: inline-block;
-  margin: 0 10px;
-}
-a {
-  color: #42b983;
-}
+    h3 {
+        margin: 40px 0 0;
+    }
+
+    ul {
+        list-style-type: none;
+        padding: 0;
+    }
+
+    li {
+        display: inline-block;
+        margin: 0 10px;
+    }
+    p {
+        margin: 10px 0;
+    }
+    a {
+        color: #42b983;
+    }
+    .wrapper {
+        display: flex;
+        width: 950px;
+        margin: 0 auto;
+    }
+    .settings {
+        text-align: left;
+        width: 300px;
+    }
+    .content {
+        text-align: left;
+        margin-left: 30px;
+        width: 500px;
+        height: 500px;
+        overflow: auto;
+        border-left: 1px solid #ddd;
+        padding-left: 30px;
+    }
 </style>
